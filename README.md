@@ -2,6 +2,14 @@
 
 Tools I made for Fortnite.
 
+## patch notes
+
+v1.0
+-initial release
+
+v2.0 
+-program would be confused if there was more than 1 target on the screen, now it aims at the nearest.
+
 ## Note this before install
 
 An Nvidia card compatible with cuda 11.7 is recommended.  
