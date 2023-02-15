@@ -4,10 +4,10 @@ Tools I made for Fortnite.
 
 ## patch notes
 
-v1.0
+v1.0  
 -initial release
 
-v2.0 
+v2.0  
 -program would be confused if there was more than 1 target on the screen, now it aims at the nearest.
 
 ## Note this before install
