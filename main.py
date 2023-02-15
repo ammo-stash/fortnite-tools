@@ -1,5 +1,6 @@
 import argparse
 import time
+import math
 import customtkinter as ctk
 import cv2
 import keyboard
@@ -26,11 +27,13 @@ wconst = 640
 frame_count = 0
 fps = 0
 scale = 1
+target_dist_closest = 9999999
 key_pressed1 = False
 key_pressed2 = False
+own_player = False
 half = wconst / 2
 screen = mss.mss()
-detection_box = {'left': int(width - (wconst / 2)), 'top': int(height - (wconst / 2)),
+detection_box = {'left': int(width - half), 'top': int(height - half),
                  'width': int(wconst), 'height': int(wconst)}
 
 ctk.set_appearance_mode("Dark")
@@ -54,8 +57,8 @@ img.place(x=360, y=360)
 label = ctk.CTkLabel(root, text=f"FPS: {fps}", font=("Arial", 40))
 label.place(x=360, y=300)
 
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='best.pt')
-model.conf = 0.75
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='weak.pt')
+model.conf = 0.6
 
 
 def keybinds():
@@ -102,6 +105,10 @@ while True:
         results = model(frame)
 
         if len(results.xyxy[0]) != 0:
+            distances = []
+            targets = []
+            distances.clear()
+            targets.clear()
             for box in results.xyxy[0]:
                 x2 = int(box[2])
                 x1 = int(box[0])
@@ -109,7 +116,17 @@ while True:
                 y1 = int(box[1])
                 x = int(((x1 + x2) / 2) - half)
                 y = int(((y1 + y2) / 2) - ((y2 - y1) / game) - half)
-                own_player = x1 < wconst / 2.7 < y2
+                dist = math.sqrt(x * x + y * y)
+                own_player = x1 < 128 and 220 < y2
+                if not own_player:
+                    distances.append(dist)
+                    targets.append((x, y))
+                cv2.circle(frame, (int(x + half), int(y + half)), 2, (0, 255, 0), -1)
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 1)
+
+            if len(distances) != 0:
+                min_index = distances.index(min(distances))
+                x, y = targets[min_index]
 
                 if win32api.GetKeyState(0x02) in (-127, -128) and not own_player \
                         and not (half - 1 <= x + half <= half + 1 and half - 1 <= y + half <= half + 1):
@@ -121,8 +138,5 @@ while True:
                         and checkbox2.get() == 1:
                     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, x, y, 0, 0)
                     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, x, y, 0, 0)
-                cv2.circle(frame, (int(x + half), int(y + half)), 2, (0, 255, 0), -1)
-                cv2.line(frame, (int(half), int(half)),
-                         (x + int(half), y + int(half)), (0, 0, 255), 1)
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 1)
+                cv2.line(frame, (int(half), int(half)), (x + int(half), y + int(half)), (0, 0, 255), 1)
         window(frame)
